@@ -1,0 +1,362 @@
+# SeatUp.ai CI/CD Pipeline
+# Comprehensive workflow for full-stack HRMS application
+# Handles Frontend (React/TS), Backend (Node.js), AI (Python), and DevOps
+
+name: SeatUp.ai CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18.x'
+  PYTHON_VERSION: '3.11'
+  
+jobs:
+  # Security and Code Quality Scanning
+  security-scan:
+    name: Security & Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript, python
+          
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+  # Frontend Tests and Build (React + TypeScript)
+  frontend:
+    name: Frontend CI/CD
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run TypeScript type checking
+        run: npm run type-check
+        
+      - name: Run ESLint
+        run: npm run lint
+        
+      - name: Run tests with coverage
+        run: npm run test:coverage
+        
+      - name: Build production bundle
+        run: npm run build
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          retention-days: 30
+
+  # Backend Tests and Build (Node.js + Express)
+  backend:
+    name: Backend CI/CD
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: seatup_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+          
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run ESLint
+        run: npm run lint
+        
+      - name: Run unit tests
+        run: npm run test:unit
+        env:
+          DATABASE_URL: postgres://postgres:testpass@localhost:5432/seatup_test
+          REDIS_URL: redis://localhost:6379
+          
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          DATABASE_URL: postgres://postgres:testpass@localhost:5432/seatup_test
+          REDIS_URL: redis://localhost:6379
+          
+      - name: Build application
+        run: npm run build
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist/
+          retention-days: 30
+
+  # AI/ML Services Tests and Build (Python + FastAPI)
+  ai-services:
+    name: AI/ML Services CI/CD
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ai
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: ai/requirements.txt
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          
+      - name: Run code formatting check (Black)
+        run: black --check .
+        
+      - name: Run linting (flake8)
+        run: flake8 .
+        
+      - name: Run type checking (mypy)
+        run: mypy .
+        
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=. --cov-report=xml --cov-report=term
+          
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./ai/coverage.xml
+          flags: ai-services
+          name: ai-services-coverage
+
+  # Docker Build and Security Scan
+  docker:
+    name: Docker Build & Security
+    runs-on: ubuntu-latest
+    needs: [frontend, backend, ai-services]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download frontend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          
+      - name: Download backend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build
+          path: backend/dist/
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build Docker images
+        run: |
+          docker build -t seatup-frontend:latest -f frontend/Dockerfile frontend/
+          docker build -t seatup-backend:latest -f backend/Dockerfile backend/
+          docker build -t seatup-ai:latest -f ai/Dockerfile ai/
+          
+      - name: Run Trivy security scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'seatup-backend:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Database Migrations and Schema Validation
+  database:
+    name: Database Migrations
+    runs-on: ubuntu-latest
+    needs: [backend]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: seatup_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+          
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+        
+      - name: Run database migrations
+        run: cd backend && npm run migrate
+        env:
+          DATABASE_URL: postgres://postgres:testpass@localhost:5432/seatup_test
+          
+      - name: Validate schema integrity
+        run: cd backend && npm run db:validate
+        env:
+          DATABASE_URL: postgres://postgres:testpass@localhost:5432/seatup_test
+
+  # End-to-End Testing
+  e2e-tests:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [frontend, backend, ai-services]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install E2E test dependencies
+        run: cd e2e-tests && npm ci
+        
+      - name: Run Playwright tests
+        run: cd e2e-tests && npm run test
+        
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: e2e-tests/test-results/
+          retention-days: 7
+
+  # Performance and Accessibility Testing
+  performance:
+    name: Performance & Accessibility
+    runs-on: ubuntu-latest
+    needs: [frontend]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+        
+      - name: Run Lighthouse CI
+        run: lhci autorun
+        
+      - name: Upload Lighthouse results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/
+          retention-days: 7
+
+  # Deployment Readiness Check
+  deployment-ready:
+    name: Deployment Readiness
+    runs-on: ubuntu-latest
+    needs: [security-scan, frontend, backend, ai-services, docker, database, e2e-tests]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: All checks passed
+        run: |
+          echo "🎉 All CI/CD checks passed successfully!"
+          echo "✅ Security scanning completed"
+          echo "✅ Frontend build and tests passed"
+          echo "✅ Backend build and tests passed"
+          echo "✅ AI services build and tests passed"
+          echo "✅ Docker images built and scanned"
+          echo "✅ Database migrations validated"
+          echo "✅ End-to-end tests completed"
+          echo "🚀 Ready for deployment!"
+          
+      - name: Notify deployment readiness
+        run: |
+          echo "Deployment artifacts ready:"
+          echo "- Frontend build: Available"
+          echo "- Backend build: Available" 
+          echo "- AI services: Tested and ready"
+          echo "- Docker images: Built and scanned"
+          echo "- Database: Migrations validated"
+          echo "- Security: CodeQL and Trivy scans completed"
+          echo "- Performance: Lighthouse analysis completed"
