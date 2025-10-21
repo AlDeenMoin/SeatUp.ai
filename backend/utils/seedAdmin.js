@@ -1,7 +1,7 @@
 import { createUser, findUserByEmail } from '../models/userModel.js';
 import bcrypt from 'bcrypt';
 
-const adminEmail = 'admin@seatup.ai';
+const adminEmail = 'admin@seatup.io';
 const adminPassword = 'admin123';
 const role = 'admin';
 
