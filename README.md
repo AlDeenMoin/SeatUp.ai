@@ -1,8 +1,8 @@
-# SeatUp.ai
+# SeatUp.io
 
 ## Project Overview
 
-SeatUp.ai is an intelligent office seating management platform that leverages AI and 3D visualization to optimize workspace allocation and improve employee experience. The platform enables organizations to efficiently manage office seating arrangements, visualize office layouts in 3D, and make data-driven decisions about workspace utilization.
+SeatUp.io is an intelligent office seating management platform that leverages AI and 3D visualization to optimize workspace allocation and improve employee experience. The platform enables organizations to efficiently manage office seating arrangements, visualize office layouts in 3D, and make data-driven decisions about workspace utilization.
 
 ## Tech Stack
 
@@ -35,7 +35,7 @@ SeatUp.ai is an intelligent office seating management platform that leverages AI
 
 ## UI Design Vision - Animus-Inspired Interface
 
-SeatUp.ai features a cutting-edge user interface inspired by the Animus technology from Assassin's Creed, creating an immersive, futuristic experience for office space management.
+SeatUp.io features a cutting-edge user interface inspired by the Animus technology from Assassin's Creed, creating an immersive, futuristic experience for office space management.
 
 ### Core Visual Effects
 
@@ -54,54 +54,83 @@ SeatUp.ai features a cutting-edge user interface inspired by the Animus technolo
 #### 3. Scanline / Grid / Wireframe Overlay
 - **Implementation**: Dynamic scanline and grid overlays on 3D models and UI elements
 - **Usage**: Real-time rendering indication, system processing states, data analysis visualization
-- **Effect**: Shows the "simulation being rendered" in real time, emphasizing the technological nature
-- **Technical**: SVG patterns, CSS grid overlays, Three.js wireframe materials for 3D elements
+- **Effect**: Moving horizontal scanlines, geometric grid patterns, and wireframe outlines that evoke the Animus data-reading experience
+- **Technical**: Canvas overlays, CSS pseudo-elements with animations, SVG patterns
 
-#### 4. Morph / Fragmentation Effects
-- **Implementation**: Fragmented morphing and particle dispersion during state changes
-- **Usage**: Seat assignments, office reconfigurations, user profile transitions
-- **Effect**: UI elements appear to break into pieces before reforming, creating "deconstruction/reconstruction" feel
-- **Technical**: Particle systems with Three.js, CSS transforms with staggered animations
+#### 4. Holographic / Projection Effects
+- **Implementation**: Subtle shimmer and holographic distortions on key UI elements
+- **Usage**: Important notifications, selected seats, highlighted areas in 3D view
+- **Effect**: Semi-transparent layers with chromatic aberration, giving elements a holographic quality
+- **Technical**: Multiple layered elements with opacity gradients, CSS filters (blur, hue-rotate)
 
-### UI Components with Animus Styling
+#### 5. UI Panel Animations
+- **Implementation**: Dynamic panel reveals and transitions with Animus-style edges
+- **Usage**: Sidebar navigation, modal windows, data panels
+- **Effect**: Panels that materialize with geometric patterns, sharp angular corners, and subtle particle effects
+- **Technical**: Clip-path animations, transform transitions, particle systems with Canvas/WebGL
 
-- **Navigation**: Holographic-style menus with glitch transitions
-- **3D Viewport**: Wireframe overlays with scanline effects during loading
-- **Data Panels**: Semi-transparent panels with digital noise textures
-- **Buttons/Controls**: Geometric shapes with fragmentation hover effects
-- **Loading States**: Data-corruption animations with white flash completion
-- **Notifications**: Glitch-in animations with digital distortion
+#### 6. Typography & Interface Elements
+- **Implementation**: Futuristic fonts with occasional data corruption effects
+- **Usage**: Throughout the interface, particularly in data-heavy sections
+- **Effect**: Clean sans-serif fonts that occasionally flicker or show digital artifacts during loading states
+- **Technical**: Custom font loading, text-shadow for glow effects, random character substitution animations
 
 ### Color Palette
-- Primary: Electric blue (#00D4FF) and white (#FFFFFF)
-- Accent: Digital green (#00FF88) for active states
-- Background: Deep space gray (#0A0A0F) with subtle noise
-- Warning: Glitch red (#FF0066) for errors
-- Text: Clean white with subtle glow effects
+- **Primary**: Deep blues (#1a2332, #2d3e50) - Dark, professional base
+- **Accent**: Bright cyan/electric blue (#00d9ff, #0099cc) - Animus signature color
+- **Highlights**: White (#ffffff) and light gray (#e0e0e0) for contrast
+- **Warning/Alert**: Amber (#ffa500) with glitch effect for critical actions
+- **Success**: Cyan-green (#00ffcc) for confirmations
+- **Background**: Very dark blue-black (#0a0f1a) for depth
 
-## Architecture Summary
+### Animation Timing
+- **Micro-interactions**: 100-200ms for instant feedback
+- **State transitions**: 300-500ms for smooth but noticeable changes
+- **Page transitions**: 600-800ms for the full Animus experience
+- **Glitch effects**: 50-150ms rapid sequences for authentic corrupted data feeling
 
-The application follows a microservices architecture:
+## Project Structure
 
-- **Frontend Layer**: React-based SPA communicating with backend via REST APIs
-- **API Gateway**: Express.js server handling authentication and request routing
-- **Core Services**: Modular backend services for user management, seating logic, and analytics
-- **AI Service**: Separate Python service for ML predictions and optimizations
-- **Data Layer**: PostgreSQL for persistent storage, Redis for caching
-- **3D Rendering**: Client-side Three.js integration for office visualization
+```
+SeatUp/
+├── backend/          # Node.js + Express backend
+│   ├── routes/       # API routes
+│   ├── models/       # Database models
+│   ├── middleware/   # Auth and other middleware
+│   └── utils/        # Helper functions
+├── frontend/         # React + TypeScript frontend
+│   ├── src/
+│   │   ├── components/  # Reusable UI components
+│   │   ├── pages/       # Page components
+│   │   ├── services/    # API service layer
+│   │   ├── store/       # Redux store
+│   │   └── utils/       # Helper functions
+│   └── public/       # Static assets
+├── ai/              # Python AI/ML services
+│   ├── api/         # FastAPI endpoints
+│   ├── models/      # ML model definitions
+│   ├── training/    # Model training scripts
+│   └── utils/       # Helper functions
+├── devops/          # DevOps configuration
+│   ├── docker/      # Dockerfiles
+│   ├── k8s/         # Kubernetes manifests
+│   └── terraform/   # Infrastructure code
+├── docs/            # Documentation
+└── schemas/         # Database schemas and migrations
+```
 
-## Phase/Milestone Breakdown
+## Core Features
 
 ### Phase 1: MVP (Months 1-2)
-- User authentication and authorization
-- Basic 3D office visualization with Animus-inspired loading effects
-- Seating arrangement view and management with glitch transitions
-- Simple desk booking functionality with white flash confirmations
+- User authentication and authorization with Animus-styled login
+- Basic 3D office layout visualization with wireframe overlays
+- Seat booking system with glitch effect confirmations
+- Admin dashboard with scanline effects
 
-### Phase 2: Core Features (Months 3-4)
-- Advanced 3D interactions (zoom, rotate, floor navigation) with scanline overlays
-- Real-time seat availability with morph/fragmentation updates
-- User preferences and profiles with digital UI styling
+### Phase 2: Enhanced Visualization (Months 3-4)
+- Advanced 3D navigation and controls with smooth Animus transitions
+- Real-time occupancy tracking with holographic indicators
+- Floor plan management with data corruption loading effects
 - Basic analytics dashboard with wireframe visualizations
 
 ### Phase 3: AI Integration (Months 5-6)
@@ -121,7 +150,7 @@ The application follows a microservices architecture:
 
 ### Getting Started
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/SeatUp.ai.git`
+2. Clone your fork: `git clone https://github.com/your-username/SeatUp.io.git`
 3. Create a feature branch: `git checkout -b feature/your-feature-name`
 4. Install dependencies (see README in each service folder)
 
