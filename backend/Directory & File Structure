@@ -1,0 +1,15 @@
+backend/
+├── app.js
+├── db.js
+├── models/
+│   └── userModel.js
+├── routes/
+│   ├── authRoutes.js
+│   └── userRoutes.js
+├── middleware/
+│   └── authMiddleware.js
+├── utils/
+│   └── seedAdmin.js
+├── .env.example
+├── package.json
+└── README.md
